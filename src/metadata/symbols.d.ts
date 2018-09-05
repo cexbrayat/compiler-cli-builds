@@ -17,5 +17,5 @@ export declare class Symbols {
     defineReference(name: string, value: MetadataSymbolicReferenceExpression): void;
     has(name: string): boolean;
     private readonly symbols;
-    private buildImports();
+    private buildImports;
 }

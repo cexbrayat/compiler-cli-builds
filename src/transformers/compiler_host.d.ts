@@ -10,7 +10,7 @@ import * as ts from 'typescript';
 import { TypeCheckHost } from '../diagnostics/translate_diagnostics';
 import { ModuleMetadata } from '../metadata/index';
 import { CompilerHost, CompilerOptions, LibrarySummary } from './api';
-export declare function createCompilerHost({options, tsHost}: {
+export declare function createCompilerHost({ options, tsHost }: {
     options: CompilerOptions;
     tsHost?: ts.CompilerHost;
 }): CompilerHost;
@@ -35,6 +35,7 @@ export declare class TsCompilerAotCompilerTypeCheckHostAdapter implements ts.Com
     private codeGenerator;
     private librarySummaries;
     private metadataReaderCache;
+    private fileNameToModuleNameCache;
     private flatModuleIndexCache;
     private flatModuleIndexNames;
     private flatModuleIndexRedirectNames;
@@ -50,9 +51,10 @@ export declare class TsCompilerAotCompilerTypeCheckHostAdapter implements ts.Com
     getDefaultLibLocation: () => string;
     trace: (s: string) => void;
     getDirectories: (path: string) => string[];
+    resolveTypeReferenceDirectives?: (names: string[], containingFile: string) => ts.ResolvedTypeReferenceDirective[];
     directoryExists?: (directoryName: string) => boolean;
-    constructor(rootFiles: string[], options: CompilerOptions, context: CompilerHost, metadataProvider: MetadataProvider, codeGenerator: CodeGenerator, librarySummaries?: Map<string, LibrarySummary>);
-    private resolveModuleName(moduleName, containingFile);
+    constructor(rootFiles: ReadonlyArray<string>, options: CompilerOptions, context: CompilerHost, metadataProvider: MetadataProvider, codeGenerator: CodeGenerator, librarySummaries?: Map<string, LibrarySummary>);
+    private resolveModuleName;
     resolveModuleNames(moduleNames: string[], containingFile: string): ts.ResolvedModule[];
     moduleNameToFileName(m: string, containingFile?: string): string | null;
     /**
@@ -77,30 +79,31 @@ export declare class TsCompilerAotCompilerTypeCheckHostAdapter implements ts.Com
     toSummaryFileName(fileName: string, referringSrcFileName: string): string;
     fromSummaryFileName(fileName: string, referringLibFileName: string): string;
     parseSourceSpanOf(fileName: string, line: number, character: number): ParseSourceSpan | null;
-    private getOriginalSourceFile(filePath, languageVersion?, onError?);
+    private getOriginalSourceFile;
     updateGeneratedFile(genFile: GeneratedFile): ts.SourceFile;
-    private addGeneratedFile(genFile, externalReferences);
+    private addGeneratedFile;
     shouldGenerateFile(fileName: string): {
         generate: boolean;
         baseFileName?: string;
     };
     shouldGenerateFilesFor(fileName: string): string | boolean | null;
     getSourceFile(fileName: string, languageVersion: ts.ScriptTarget, onError?: ((message: string) => void) | undefined): ts.SourceFile;
-    private getGeneratedFile(fileName);
-    private originalFileExists(fileName);
+    private getGeneratedFile;
+    private originalFileExists;
     fileExists(fileName: string): boolean;
     loadSummary(filePath: string): string | null;
     isSourceFile(filePath: string): boolean;
-    readFile(fileName: string): string;
+    readFile(fileName: string): string | undefined;
     getMetadataFor(filePath: string): ModuleMetadata[] | undefined;
     loadResource(filePath: string): Promise<string> | string;
-    private hasBundleIndex(filePath);
+    getOutputName(filePath: string): string;
+    private hasBundleIndex;
     getDefaultLibFileName: (options: ts.CompilerOptions) => string;
     getCurrentDirectory: () => string;
     getCanonicalFileName: (fileName: string) => string;
     useCaseSensitiveFileNames: () => boolean;
     getNewLine: () => string;
-    realPath: (p: string) => string;
+    realpath: (p: string) => string;
     writeFile: any;
 }
 export declare function getOriginalReferences(sourceFile: ts.SourceFile): ts.FileReference[] | undefined;

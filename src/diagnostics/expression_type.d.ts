@@ -12,7 +12,7 @@ export interface ExpressionDiagnosticsContext {
 }
 export declare enum DiagnosticKind {
     Error = 0,
-    Warning = 1,
+    Warning = 1
 }
 export declare class TypeDiagnostic {
     kind: DiagnosticKind;
@@ -52,9 +52,9 @@ export declare class AstType implements AstVisitor {
     private readonly anyType;
     private _undefinedType;
     private readonly undefinedType;
-    private resolveMethodCall(receiverType, ast);
-    private resolvePropertyRead(receiverType, ast);
-    private reportError(message, ast);
-    private reportWarning(message, ast);
-    private isAny(symbol);
+    private resolveMethodCall;
+    private resolvePropertyRead;
+    private reportError;
+    private reportWarning;
+    private isAny;
 }

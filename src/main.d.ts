@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import 'reflect-metadata';
 import * as ts from 'typescript';
 import * as api from './transformers/api';
@@ -10,5 +11,5 @@ export declare function readCommandLineAndConfiguration(args: string[], existing
 export declare function watchMode(project: string, options: api.CompilerOptions, consoleError: (s: string) => void): {
     close: () => void;
     ready: (cb: () => void) => void;
-    firstCompileResult: (api.Diagnostic | ts.Diagnostic)[];
+    firstCompileResult: ReadonlyArray<api.Diagnostic | ts.Diagnostic>;
 };
