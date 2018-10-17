@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/// <amd-module name="@angular/compiler-cli/src/ngtsc/metadata/src/reflector" />
 import * as ts from 'typescript';
 import { ClassMember, CtorParameter, Declaration, Decorator, FunctionDefinition, Import, ReflectionHost } from '../../host';
 /**
@@ -25,12 +26,6 @@ export declare class TypeScriptReflectionHost implements ReflectionHost {
     getGenericArityOfClass(clazz: ts.Declaration): number | null;
     getVariableValue(declaration: ts.VariableDeclaration): ts.Expression | null;
     getDtsDeclarationOfClass(_: ts.Declaration): ts.ClassDeclaration | null;
-    /**
-     * Resolve a `ts.Symbol` to its declaration, keeping track of the `viaModule` along the way.
-     *
-     * @internal
-     */
-    protected getDeclarationOfSymbol(symbol: ts.Symbol): Declaration | null;
     private _reflectDecorator;
     private _reflectMember;
 }

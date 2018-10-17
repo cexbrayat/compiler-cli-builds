@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/// <amd-module name="@angular/compiler-cli/src/transformers/compiler_host" />
 import { AotCompilerHost, GeneratedFile, ParseSourceSpan } from '@angular/compiler';
 import * as ts from 'typescript';
 import { TypeCheckHost } from '../diagnostics/translate_diagnostics';
