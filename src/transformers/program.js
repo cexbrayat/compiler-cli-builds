@@ -20,37 +20,13 @@ const compiler_host_1 = require("./compiler_host");
 const inline_resources_1 = require("./inline_resources");
 const lower_expressions_1 = require("./lower_expressions");
 const metadata_cache_1 = require("./metadata_cache");
+const nocollapse_hack_1 = require("./nocollapse_hack");
 const node_emitter_transform_1 = require("./node_emitter_transform");
 const r3_metadata_transform_1 = require("./r3_metadata_transform");
 const r3_strip_decorators_1 = require("./r3_strip_decorators");
 const r3_transform_1 = require("./r3_transform");
 const tsc_pass_through_1 = require("./tsc_pass_through");
 const util_1 = require("./util");
-// Closure compiler transforms the form `Service.ngInjectableDef = X` into
-// `Service$ngInjectableDef = X`. To prevent this transformation, such assignments need to be
-// annotated with @nocollapse. Unfortunately, a bug in Typescript where comments aren't propagated
-// through the TS transformations precludes adding the comment via the AST. This workaround detects
-// the static assignments to R3 properties such as ngInjectableDef using a regex, as output files
-// are written, and applies the annotation through regex replacement.
-//
-// TODO(alxhub): clean up once fix for TS transformers lands in upstream
-//
-// Typescript reference issue: https://github.com/Microsoft/TypeScript/issues/22497
-// Pattern matching all Render3 property names.
-const R3_DEF_NAME_PATTERN = ['ngInjectableDef'].join('|');
-// Pattern matching `Identifier.property` where property is a Render3 property.
-const R3_DEF_ACCESS_PATTERN = `[^\\s\\.()[\\]]+\.(${R3_DEF_NAME_PATTERN})`;
-// Pattern matching a source line that contains a Render3 static property assignment.
-// It declares two matching groups - one for the preceding whitespace, the second for the rest
-// of the assignment expression.
-const R3_DEF_LINE_PATTERN = `^(\\s*)(${R3_DEF_ACCESS_PATTERN} = .*)$`;
-// Regex compilation of R3_DEF_LINE_PATTERN. Matching group 1 yields the whitespace preceding the
-// assignment, matching group 2 gives the rest of the assignment expressions.
-const R3_MATCH_DEFS = new RegExp(R3_DEF_LINE_PATTERN, 'gmu');
-// Replacement string that complements R3_MATCH_DEFS. It inserts `/** @nocollapse */` before the
-// assignment but after any indentation. Note that this will mess up any sourcemaps on this line
-// (though there shouldn't be any, since Render3 properties are synthetic).
-const R3_NOCOLLAPSE_DEFS = '$1\/** @nocollapse *\/ $2';
 /**
  * Maximum number of files that are emitable via calling ts.Program.emit
  * passing individual targetSourceFiles.
@@ -81,13 +57,13 @@ const defaultEmitCallback = ({ program, targetSourceFile, writeFile, cancellatio
  * Minimum supported TypeScript version
  * ∀ supported typescript version v, v >= MIN_TS_VERSION
  */
-const MIN_TS_VERSION = '3.0.1';
+const MIN_TS_VERSION = '3.1.1';
 /**
  * Supremum of supported TypeScript versions
  * ∀ supported typescript version v, v < MAX_TS_VERSION
  * MAX_TS_VERSION is not considered as a supported TypeScript version
  */
-const MAX_TS_VERSION = '3.1.0';
+const MAX_TS_VERSION = '3.2.0';
 class AngularCompilerProgram {
     constructor(rootNames, options, host, oldProgram) {
         this.options = options;
@@ -215,9 +191,6 @@ class AngularCompilerProgram {
         return this.options.enableIvy === true ? this._emitRender3(parameters) :
             this._emitRender2(parameters);
     }
-    _annotateR3Properties(contents) {
-        return contents.replace(R3_MATCH_DEFS, R3_NOCOLLAPSE_DEFS);
-    }
     _emitRender3({ emitFlags = api_1.EmitFlags.Default, cancellationToken, customTransformers, emitCallback = defaultEmitCallback, mergeEmitResultsCallback = mergeEmitResults, } = {}) {
         const emitStart = Date.now();
         if ((emitFlags & (api_1.EmitFlags.JS | api_1.EmitFlags.DTS | api_1.EmitFlags.Metadata | api_1.EmitFlags.Codegen)) ===
@@ -232,7 +205,7 @@ class AngularCompilerProgram {
             let genFile;
             if (this.options.annotateForClosureCompiler && sourceFile &&
                 util_1.TS.test(sourceFile.fileName)) {
-                outData = this._annotateR3Properties(outData);
+                outData = nocollapse_hack_1.nocollapseHack(outData);
             }
             this.writeFile(outFileName, outData, writeByteOrderMark, onError, undefined, sourceFiles);
         };
@@ -309,7 +282,7 @@ class AngularCompilerProgram {
                     }
                 }
                 if (this.options.annotateForClosureCompiler && util_1.TS.test(sourceFile.fileName)) {
-                    outData = this._annotateR3Properties(outData);
+                    outData = nocollapse_hack_1.nocollapseHack(outData);
                 }
             }
             this.writeFile(outFileName, outData, writeByteOrderMark, onError, genFile, sourceFiles);

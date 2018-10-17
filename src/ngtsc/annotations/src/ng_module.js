@@ -65,16 +65,27 @@ class NgModuleDecoratorHandler {
             const exportsMeta = metadata_1.staticallyResolve(expr, this.reflector, this.checker, ref => this._extractModuleFromModuleWithProvidersFn(ref.node));
             exports = this.resolveTypeList(expr, exportsMeta, 'exports');
         }
+        let bootstrap = [];
+        if (ngModule.has('bootstrap')) {
+            const expr = ngModule.get('bootstrap');
+            const bootstrapMeta = metadata_1.staticallyResolve(expr, this.reflector, this.checker);
+            bootstrap = this.resolveTypeList(expr, bootstrapMeta, 'bootstrap');
+        }
         // Register this module's information with the SelectorScopeRegistry. This ensures that during
         // the compile() phase, the module's metadata is available for selector scope computation.
         this.scopeRegistry.registerModule(node, { declarations, imports, exports });
-        const context = node.getSourceFile();
+        const valueContext = node.getSourceFile();
+        let typeContext = valueContext;
+        const typeNode = this.reflector.getDtsDeclarationOfClass(node);
+        if (typeNode !== null) {
+            typeContext = typeNode.getSourceFile();
+        }
         const ngModuleDef = {
             type: new compiler_1.WrappedNodeExpr(node.name),
-            bootstrap: [],
-            declarations: declarations.map(decl => util_1.toR3Reference(decl, context)),
-            exports: exports.map(exp => util_1.toR3Reference(exp, context)),
-            imports: imports.map(imp => util_1.toR3Reference(imp, context)),
+            bootstrap: bootstrap.map(bootstrap => this._toR3Reference(bootstrap, valueContext, typeContext)),
+            declarations: declarations.map(decl => this._toR3Reference(decl, valueContext, typeContext)),
+            exports: exports.map(exp => this._toR3Reference(exp, valueContext, typeContext)),
+            imports: imports.map(imp => this._toR3Reference(imp, valueContext, typeContext)),
             emitInline: false,
         };
         const providers = ngModule.has('providers') ?
@@ -117,6 +128,19 @@ class NgModuleDecoratorHandler {
                 type: ngInjectorDef.type,
             },
         ];
+    }
+    _toR3Reference(valueRef, valueContext, typeContext) {
+        if (!(valueRef instanceof metadata_1.ResolvedReference)) {
+            return util_1.toR3Reference(valueRef, valueRef, valueContext, valueContext);
+        }
+        else {
+            let typeRef = valueRef;
+            let typeNode = this.reflector.getDtsDeclarationOfClass(typeRef.node);
+            if (typeNode !== null) {
+                typeRef = new metadata_1.ResolvedReference(typeNode, typeNode.name);
+            }
+            return util_1.toR3Reference(valueRef, typeRef, valueContext, typeContext);
+        }
     }
     /**
      * Given a `FunctionDeclaration` or `MethodDeclaration`, check if it is typed as a
@@ -167,7 +191,7 @@ class NgModuleDecoratorHandler {
                 // Recurse into nested arrays.
                 refList.push(...this.resolveTypeList(expr, entry, name));
             }
-            else if (entry instanceof metadata_1.Reference) {
+            else if (isDeclarationReference(entry)) {
                 if (!entry.expressable) {
                     throw new diagnostics_1.FatalDiagnosticError(diagnostics_1.ErrorCode.VALUE_HAS_WRONG_TYPE, expr, `One entry in ${name} is not a type`);
                 }
@@ -185,4 +209,9 @@ class NgModuleDecoratorHandler {
     }
 }
 exports.NgModuleDecoratorHandler = NgModuleDecoratorHandler;
+function isDeclarationReference(ref) {
+    return ref instanceof metadata_1.Reference &&
+        (ts.isClassDeclaration(ref.node) || ts.isFunctionDeclaration(ref.node) ||
+            ts.isVariableDeclaration(ref.node));
+}
 //# sourceMappingURL=ng_module.js.map

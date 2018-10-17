@@ -9,8 +9,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const compiler_1 = require("@angular/compiler");
 const ts = require("typescript");
+const translator_1 = require("../../translator");
 const visitor_1 = require("../../util/src/visitor");
-const translator_1 = require("./translator");
 const NO_DECORATORS = new Set();
 function ivyTransformFactory(compilation, reflector, coreImportsFrom) {
     return (context) => {

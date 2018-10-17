@@ -140,6 +140,10 @@ class TypeScriptReflectionHost {
         }
         return clazz.typeParameters !== undefined ? clazz.typeParameters.length : 0;
     }
+    getVariableValue(declaration) {
+        return declaration.initializer || null;
+    }
+    getDtsDeclarationOfClass(_) { return null; }
     /**
      * Resolve a `ts.Symbol` to its declaration, keeping track of the `viaModule` along the way.
      *
@@ -278,7 +282,7 @@ exports.reflectIdentifierOfDeclaration = reflectIdentifierOfDeclaration;
 function reflectTypeEntityToDeclaration(type, checker) {
     let realSymbol = checker.getSymbolAtLocation(type);
     if (realSymbol === undefined) {
-        throw new Error(`Cannot resolve type entity to symbol`);
+        throw new Error(`Cannot resolve type entity ${type.getText()} to symbol`);
     }
     while (realSymbol.flags & ts.SymbolFlags.Alias) {
         realSymbol = checker.getAliasedSymbol(realSymbol);

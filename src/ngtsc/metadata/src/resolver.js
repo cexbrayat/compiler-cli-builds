@@ -378,10 +378,7 @@ class StaticInterpreter {
             return this.getReference(node, context);
         }
         else if (ts.isVariableDeclaration(node)) {
-            if (!node.initializer) {
-                return undefined;
-            }
-            return this.visitExpression(node.initializer, context);
+            return this.visitVariableDeclaration(node, context);
         }
         else if (ts.isParameter(node) && context.scope.has(node)) {
             return context.scope.get(node);
@@ -397,6 +394,18 @@ class StaticInterpreter {
         }
         else {
             return this.getReference(node, context);
+        }
+    }
+    visitVariableDeclaration(node, context) {
+        const value = this.host.getVariableValue(node);
+        if (value !== null) {
+            return this.visitExpression(value, context);
+        }
+        else if (isVariableDeclarationDeclared(node)) {
+            return this.getReference(node, context);
+        }
+        else {
+            return undefined;
         }
     }
     visitEnumDeclaration(node, context) {
@@ -644,5 +653,17 @@ function identifierOfDeclaration(decl) {
 }
 function isPossibleClassDeclaration(node) {
     return ts.isClassDeclaration(node) || ts.isVariableDeclaration(node);
+}
+function isVariableDeclarationDeclared(node) {
+    if (node.parent === undefined || !ts.isVariableDeclarationList(node.parent)) {
+        return false;
+    }
+    const declList = node.parent;
+    if (declList.parent === undefined || !ts.isVariableStatement(declList.parent)) {
+        return false;
+    }
+    const varStmt = declList.parent;
+    return varStmt.modifiers !== undefined &&
+        varStmt.modifiers.some(mod => mod.kind === ts.SyntaxKind.DeclareKeyword);
 }
 //# sourceMappingURL=resolver.js.map

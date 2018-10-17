@@ -10,6 +10,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const compiler_1 = require("@angular/compiler");
 const ts = require("typescript");
 const diagnostics_1 = require("../../diagnostics");
+const host_1 = require("../../host");
 const metadata_1 = require("../../metadata");
 function getConstructorDependencies(clazz, reflector, isCore) {
     const useType = [];
@@ -63,23 +64,8 @@ function getConstructorDependencies(clazz, reflector, isCore) {
             const importedSymbol = reflector.getImportOfIdentifier(tokenExpr);
             if (importedSymbol !== null && importedSymbol.from === '@angular/core') {
                 switch (importedSymbol.name) {
-                    case 'ChangeDetectorRef':
-                        resolved = compiler_1.R3ResolvedDependencyType.ChangeDetectorRef;
-                        break;
-                    case 'ElementRef':
-                        resolved = compiler_1.R3ResolvedDependencyType.ElementRef;
-                        break;
                     case 'Injector':
                         resolved = compiler_1.R3ResolvedDependencyType.Injector;
-                        break;
-                    case 'TemplateRef':
-                        resolved = compiler_1.R3ResolvedDependencyType.TemplateRef;
-                        break;
-                    case 'ViewContainerRef':
-                        resolved = compiler_1.R3ResolvedDependencyType.ViewContainerRef;
-                        break;
-                    case 'Renderer2':
-                        resolved = compiler_1.R3ResolvedDependencyType.Renderer2;
                         break;
                     default:
                     // Leave as a Token or Attribute.
@@ -92,11 +78,11 @@ function getConstructorDependencies(clazz, reflector, isCore) {
     return useType;
 }
 exports.getConstructorDependencies = getConstructorDependencies;
-function toR3Reference(ref, context) {
-    const value = ref.toExpression(context, metadata_1.ImportMode.UseExistingImport);
-    const type = ref.toExpression(context, metadata_1.ImportMode.ForceNewImport);
+function toR3Reference(valueRef, typeRef, valueContext, typeContext) {
+    const value = valueRef.toExpression(valueContext, metadata_1.ImportMode.UseExistingImport);
+    const type = typeRef.toExpression(typeContext, metadata_1.ImportMode.ForceNewImport);
     if (value === null || type === null) {
-        throw new Error(`Could not refer to ${ts.SyntaxKind[ref.node.kind]}`);
+        throw new Error(`Could not refer to ${ts.SyntaxKind[valueRef.node.kind]}`);
     }
     return { value, type };
 }
@@ -182,4 +168,17 @@ function forwardRefResolver(ref, args) {
     return expandForwardRef(args[0]);
 }
 exports.forwardRefResolver = forwardRefResolver;
+function extractDirectiveGuards(node, reflector) {
+    const methods = nodeStaticMethodNames(node, reflector);
+    const ngTemplateGuards = methods.filter(method => method.startsWith('ngTemplateGuard_'))
+        .map(method => method.split('_', 2)[1]);
+    const hasNgTemplateContextGuard = methods.some(name => name === 'ngTemplateContextGuard');
+    return { hasNgTemplateContextGuard, ngTemplateGuards };
+}
+exports.extractDirectiveGuards = extractDirectiveGuards;
+function nodeStaticMethodNames(node, reflector) {
+    return reflector.getMembersOfClass(node)
+        .filter(member => member.kind === host_1.ClassMemberKind.Method && member.isStatic)
+        .map(member => member.name);
+}
 //# sourceMappingURL=util.js.map

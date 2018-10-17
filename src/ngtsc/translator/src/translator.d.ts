@@ -14,12 +14,12 @@ export declare class Context {
     readonly withStatementMode: Context;
 }
 export declare class ImportManager {
-    private isCore;
+    protected isCore: boolean;
     private prefix;
     private moduleToIndex;
     private nextIndex;
     constructor(isCore: boolean, prefix?: string);
-    generateNamedImport(moduleName: string, symbol: string): string;
+    generateNamedImport(moduleName: string, symbol: string): string | null;
     getAllImports(contextPath: string, rewriteCoreImportsTo: ts.SourceFile | null): {
         name: string;
         as: string;
@@ -53,7 +53,7 @@ export declare class TypeTranslatorVisitor implements ExpressionVisitor, TypeVis
     visitReadPropExpr(ast: ReadPropExpr, context: Context): void;
     visitReadKeyExpr(ast: ReadKeyExpr, context: Context): void;
     visitLiteralArrayExpr(ast: LiteralArrayExpr, context: Context): string;
-    visitLiteralMapExpr(ast: LiteralMapExpr, context: Context): void;
+    visitLiteralMapExpr(ast: LiteralMapExpr, context: Context): string;
     visitCommaExpr(ast: CommaExpr, context: Context): void;
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: Context): string;
     visitTypeofExpr(ast: TypeofExpr, context: Context): string;

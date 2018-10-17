@@ -8,7 +8,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 const ts = require("typescript");
-const translator_1 = require("./translator");
+const translator_1 = require("../../translator");
 /**
  * Processes .d.ts file text and adds static field declarations, with types.
  */

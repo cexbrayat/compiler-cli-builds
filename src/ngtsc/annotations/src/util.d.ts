@@ -10,7 +10,7 @@ import * as ts from 'typescript';
 import { Decorator, ReflectionHost } from '../../host';
 import { Reference } from '../../metadata';
 export declare function getConstructorDependencies(clazz: ts.ClassDeclaration, reflector: ReflectionHost, isCore: boolean): R3DependencyMetadata[] | null;
-export declare function toR3Reference(ref: Reference, context: ts.SourceFile): R3Reference;
+export declare function toR3Reference(valueRef: Reference, typeRef: Reference, valueContext: ts.SourceFile, typeContext: ts.SourceFile): R3Reference;
 export declare function isAngularCore(decorator: Decorator): boolean;
 /**
  * Unwrap a `ts.Expression`, removing outer type-casts or parentheses until the expression is in its
@@ -37,3 +37,7 @@ export declare function unwrapForwardRef(node: ts.Expression, reflector: Reflect
  * @returns an unwrapped argument if `ref` pointed to forwardRef, or null otherwise
  */
 export declare function forwardRefResolver(ref: Reference<ts.FunctionDeclaration | ts.MethodDeclaration>, args: ts.Expression[]): ts.Expression | null;
+export declare function extractDirectiveGuards(node: ts.Declaration, reflector: ReflectionHost): {
+    ngTemplateGuards: string[];
+    hasNgTemplateContextGuard: boolean;
+};

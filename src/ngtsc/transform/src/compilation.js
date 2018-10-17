@@ -38,6 +38,7 @@ class IvyCompilation {
          * information recorded about them for later compilation.
          */
         this.analysis = new Map();
+        this.typeCheckMap = new Map();
         /**
          * Tracks factory information which needs to be generated.
          */
@@ -77,6 +78,9 @@ class IvyCompilation {
                                 analysis: analysis.analysis,
                                 metadata: metadata,
                             });
+                            if (!!analysis.typeCheck) {
+                                this.typeCheckMap.set(node, adapter);
+                            }
                         }
                         if (analysis.diagnostics !== undefined) {
                             this._diagnostics.push(...analysis.diagnostics);
@@ -123,6 +127,13 @@ class IvyCompilation {
         else {
             return undefined;
         }
+    }
+    typeCheck(context) {
+        this.typeCheckMap.forEach((handler, node) => {
+            if (handler.typeCheck !== undefined) {
+                handler.typeCheck(context, node, this.analysis.get(node).analysis);
+            }
+        });
     }
     /**
      * Perform a compilation operation on the given class declaration and return instructions to an

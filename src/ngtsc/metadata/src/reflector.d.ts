@@ -23,6 +23,8 @@ export declare class TypeScriptReflectionHost implements ReflectionHost {
     getDeclarationOfIdentifier(id: ts.Identifier): Declaration | null;
     getDefinitionOfFunction<T extends ts.FunctionDeclaration | ts.MethodDeclaration | ts.FunctionExpression>(node: T): FunctionDefinition<T>;
     getGenericArityOfClass(clazz: ts.Declaration): number | null;
+    getVariableValue(declaration: ts.VariableDeclaration): ts.Expression | null;
+    getDtsDeclarationOfClass(_: ts.Declaration): ts.ClassDeclaration | null;
     /**
      * Resolve a `ts.Symbol` to its declaration, keeping track of the `viaModule` along the way.
      *

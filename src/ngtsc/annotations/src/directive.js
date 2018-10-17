@@ -33,7 +33,8 @@ class DirectiveDecoratorHandler {
         // If the directive has a selector, it should be registered with the `SelectorScopeRegistry` so
         // when this directive appears in an `@NgModule` scope, its selector can be determined.
         if (analysis && analysis.selector !== null) {
-            this.scopeRegistry.registerSelector(node, analysis.selector);
+            let ref = new metadata_1.ResolvedReference(node, node.name);
+            this.scopeRegistry.registerDirective(node, Object.assign({ ref, directive: ref, name: node.name.text, selector: analysis.selector, exportAs: analysis.exportAs, inputs: analysis.inputs, outputs: analysis.outputs, queries: analysis.queries.map(query => query.propertyName), isComponent: false }, util_1.extractDirectiveGuards(node, this.reflector)));
         }
         return { analysis };
     }

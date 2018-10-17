@@ -9,12 +9,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
 const ts = require("typescript");
+const nocollapse_hack_1 = require("../transformers/nocollapse_hack");
 const annotations_1 = require("./annotations");
 const base_def_1 = require("./annotations/src/base_def");
 const factories_1 = require("./factories");
 const metadata_1 = require("./metadata");
 const resource_loader_1 = require("./resource_loader");
 const transform_1 = require("./transform");
+const typecheck_1 = require("./typecheck");
 class NgtscProgram {
     constructor(rootNames, options, host, oldProgram) {
         this.options = options;
@@ -34,6 +36,7 @@ class NgtscProgram {
         else {
             this.rootDirs.push(host.getCurrentDirectory());
         }
+        this.closureCompilerEnabled = !!options.annotateForClosureCompiler;
         this.resourceLoader = host.readResource !== undefined ?
             new resource_loader_1.HostResourceLoader(host.readResource.bind(host)) :
             new resource_loader_1.FileResourceLoader();
@@ -74,7 +77,13 @@ class NgtscProgram {
     }
     getNgSemanticDiagnostics(fileName, cancellationToken) {
         const compilation = this.ensureAnalyzed();
-        return compilation.diagnostics;
+        const diagnostics = [...compilation.diagnostics];
+        if (!!this.options.fullTemplateTypeCheck) {
+            const ctx = new typecheck_1.TypeCheckContext();
+            compilation.typeCheck(ctx);
+            diagnostics.push(...this.compileTypeCheckProgram(ctx));
+        }
+        return diagnostics;
     }
     loadNgStructureAsync() {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
@@ -114,6 +123,9 @@ class NgtscProgram {
             if (fileName.endsWith('.d.ts')) {
                 data = sourceFiles.reduce((data, sf) => this.compilation.transformedDtsFor(sf.fileName, data), data);
             }
+            else if (this.closureCompilerEnabled && fileName.endsWith('.ts')) {
+                data = nocollapse_hack_1.nocollapseHack(data);
+            }
             this.host.writeFile(fileName, data, writeByteOrderMark, onError, sourceFiles);
         };
         const transforms = [transform_1.ivyTransformFactory(this.compilation, this.reflector, this.coreImportsFrom)];
@@ -131,6 +143,16 @@ class NgtscProgram {
             },
         });
         return emitResult;
+    }
+    compileTypeCheckProgram(ctx) {
+        const host = new typecheck_1.TypeCheckProgramHost(this.tsProgram, this.host, ctx);
+        const auxProgram = ts.createProgram({
+            host,
+            rootNames: this.tsProgram.getRootFileNames(),
+            oldProgram: this.tsProgram,
+            options: this.options,
+        });
+        return auxProgram.getSemanticDiagnostics();
     }
     makeCompilation() {
         const checker = this.tsProgram.getTypeChecker();

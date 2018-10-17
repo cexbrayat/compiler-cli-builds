@@ -111,7 +111,8 @@ class ComponentDecoratorHandler {
         // If the component has a selector, it should be registered with the `SelectorScopeRegistry` so
         // when this component appears in an `@NgModule` scope, its selector can be determined.
         if (metadata.selector !== null) {
-            this.scopeRegistry.registerSelector(node, metadata.selector);
+            const ref = new metadata_1.ResolvedReference(node, node.name);
+            this.scopeRegistry.registerDirective(node, Object.assign({ ref, name: node.name.text, directive: ref, selector: metadata.selector, exportAs: metadata.exportAs, inputs: metadata.inputs, outputs: metadata.outputs, queries: metadata.queries.map(query => query.propertyName), isComponent: true }, util_1.extractDirectiveGuards(node, this.reflector)));
         }
         // Construct the list of view queries.
         const coreModule = this.isCore ? undefined : '@angular/core';
@@ -130,28 +131,48 @@ class ComponentDecoratorHandler {
         if (component.has('encapsulation')) {
             encapsulation = parseInt(metadata_1.staticallyResolve(component.get('encapsulation'), this.reflector, this.checker));
         }
+        let animations = null;
+        if (component.has('animations')) {
+            animations = new compiler_1.WrappedNodeExpr(component.get('animations'));
+        }
         return {
-            analysis: Object.assign({}, metadata, { template,
-                viewQueries,
-                encapsulation, styles: styles || [], 
-                // These will be replaced during the compilation step, after all `NgModule`s have been
-                // analyzed and the full compilation scope for the component can be realized.
-                pipes: EMPTY_MAP, directives: EMPTY_MAP, wrapDirectivesInClosure: false })
+            analysis: {
+                meta: Object.assign({}, metadata, { template,
+                    viewQueries,
+                    encapsulation, styles: styles || [], 
+                    // These will be replaced during the compilation step, after all `NgModule`s have been
+                    // analyzed and the full compilation scope for the component can be realized.
+                    pipes: EMPTY_MAP, directives: EMPTY_MAP, wrapDirectivesInClosure: false, //
+                    animations }),
+                parsedTemplate: template.nodes,
+            },
+            typeCheck: true,
         };
+    }
+    typeCheck(ctx, node, meta) {
+        const scope = this.scopeRegistry.lookupCompilationScopeAsRefs(node);
+        const matcher = new compiler_1.SelectorMatcher();
+        if (scope !== null) {
+            scope.directives.forEach((meta, selector) => { matcher.addSelectables(compiler_1.CssSelector.parse(selector), meta); });
+            ctx.addTemplate(node, meta.parsedTemplate, matcher);
+        }
     }
     compile(node, analysis, pool) {
         // Check whether this component was registered with an NgModule. If so, it should be compiled
         // under that module's compilation scope.
         const scope = this.scopeRegistry.lookupCompilationScope(node);
+        let metadata = analysis.meta;
         if (scope !== null) {
             // Replace the empty components and directives from the analyze() step with a fully expanded
             // scope. This is possible now because during compile() the whole compilation unit has been
             // fully analyzed.
-            const { directives, pipes, containsForwardDecls } = scope;
+            const { pipes, containsForwardDecls } = scope;
+            const directives = new Map();
+            scope.directives.forEach((meta, selector) => directives.set(selector, meta.directive));
             const wrapDirectivesInClosure = !!containsForwardDecls;
-            analysis = Object.assign({}, analysis, { directives, pipes, wrapDirectivesInClosure });
+            metadata = Object.assign({}, metadata, { directives, pipes, wrapDirectivesInClosure });
         }
-        const res = compiler_1.compileComponentFromMetadata(analysis, pool, compiler_1.makeBindingParser());
+        const res = compiler_1.compileComponentFromMetadata(metadata, pool, compiler_1.makeBindingParser());
         return {
             name: 'ngComponentDef',
             initializer: res.expression,

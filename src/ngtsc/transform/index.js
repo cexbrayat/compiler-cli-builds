@@ -13,7 +13,4 @@ var declaration_1 = require("./src/declaration");
 exports.DtsFileTransformer = declaration_1.DtsFileTransformer;
 var transform_1 = require("./src/transform");
 exports.ivyTransformFactory = transform_1.ivyTransformFactory;
-var translator_1 = require("./src/translator");
-exports.ImportManager = translator_1.ImportManager;
-exports.translateStatement = translator_1.translateStatement;
 //# sourceMappingURL=index.js.map

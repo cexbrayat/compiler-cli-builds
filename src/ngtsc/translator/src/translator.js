@@ -43,7 +43,7 @@ const CORE_SUPPORTED_SYMBOLS = new Set([
     'inject',
     'ɵInjectableDef',
     'ɵInjectorDef',
-    'ɵNgModuleDef',
+    'ɵNgModuleDefWithMeta',
     'ɵNgModuleFactory',
 ]);
 class ImportManager {
@@ -167,7 +167,13 @@ class ExpressionTranslatorVisitor {
         if (ast.value.moduleName === null || ast.value.name === null) {
             throw new Error(`Import unknown module or symbol ${ast.value}`);
         }
-        return ts.createPropertyAccess(ts.createIdentifier(this.imports.generateNamedImport(ast.value.moduleName, ast.value.name)), ts.createIdentifier(ast.value.name));
+        const importIdentifier = this.imports.generateNamedImport(ast.value.moduleName, ast.value.name);
+        if (importIdentifier === null) {
+            return ts.createIdentifier(ast.value.name);
+        }
+        else {
+            return ts.createPropertyAccess(ts.createIdentifier(importIdentifier), ts.createIdentifier(ast.value.name));
+        }
     }
     visitConditionalExpr(ast, context) {
         return ts.createParen(ts.createConditional(ast.condition.visitExpression(this, context), ast.trueCase.visitExpression(this, context), ast.falseCase.visitExpression(this, context)));
@@ -326,7 +332,17 @@ class TypeTranslatorVisitor {
         return `[${values.join(', ')}]`;
     }
     visitLiteralMapExpr(ast, context) {
-        throw new Error('Method not implemented.');
+        const entries = ast.entries.map(entry => {
+            const { key, quoted } = entry;
+            const value = entry.value.visitExpression(this, context);
+            if (quoted) {
+                return `'${key}': ${value}`;
+            }
+            else {
+                return `${key}: ${value}`;
+            }
+        });
+        return `{${entries.join(', ')}}`;
     }
     visitCommaExpr(ast, context) { throw new Error('Method not implemented.'); }
     visitWrappedNodeExpr(ast, context) {
