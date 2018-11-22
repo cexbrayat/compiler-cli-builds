@@ -1,0 +1,2 @@
+
+"/private/var/tmp/_bazel_ced-pro/6dc9369d09add569c4aa6799a3ceaffd/external/nodejs/bin/node" "/private/var/tmp/_bazel_ced-pro/6dc9369d09add569c4aa6799a3ceaffd/external/nodejs/bin/nodejs/bin/npm" publish bazel-out/darwin-fastbuild/bin/packages/compiler-cli/npm_package "$@"
